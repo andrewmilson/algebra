@@ -22,7 +22,10 @@ enum FFTOrder {
 impl<F: FftField> Radix2EvaluationDomain<F> {
     /// Degree aware FFT that runs in O(n log d) instead of O(n log n)
     /// Implementation copied from libiop.
-    pub(crate) fn degree_aware_fft_in_place<T: DomainCoeff<F>>(&self, coeffs: &mut Vec<T>) {
+    pub(crate) fn degree_aware_fft_in_place<T: DomainCoeff<F>, A: Allocator>(
+        &self,
+        coeffs: &mut Vec<T, A>,
+    ) {
         if !self.offset.is_one() {
             Self::distribute_powers(&mut *coeffs, self.offset);
         }

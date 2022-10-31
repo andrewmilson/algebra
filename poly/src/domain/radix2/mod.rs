@@ -3,6 +3,8 @@
 //! fields that are FFT-friendly. `Radix2EvaluationDomain` supports
 //! FFTs of size at most `2^F::TWO_ADICITY`.
 
+use core::alloc::Allocator;
+
 pub use crate::domain::utils::Elements;
 use crate::domain::{DomainCoeff, EvaluationDomain};
 use ark_ff::FftField;
@@ -144,7 +146,7 @@ impl<F: FftField> EvaluationDomain<F> for Radix2EvaluationDomain<F> {
     }
 
     #[inline]
-    fn fft_in_place<T: DomainCoeff<F>>(&self, coeffs: &mut Vec<T>) {
+    fn fft_in_place<T: DomainCoeff<F>, A: Allocator>(&self, coeffs: &mut Vec<T, A>) {
         if coeffs.len() * DEGREE_AWARE_FFT_THRESHOLD_FACTOR <= self.size() {
             self.degree_aware_fft_in_place(coeffs);
         } else {
@@ -154,7 +156,7 @@ impl<F: FftField> EvaluationDomain<F> for Radix2EvaluationDomain<F> {
     }
 
     #[inline]
-    fn ifft_in_place<T: DomainCoeff<F>>(&self, evals: &mut Vec<T>) {
+    fn ifft_in_place<T: DomainCoeff<F>, A: Allocator>(&self, evals: &mut Vec<T, A>) {
         evals.resize(self.size(), T::zero());
         self.in_order_ifft_in_place(&mut *evals);
     }

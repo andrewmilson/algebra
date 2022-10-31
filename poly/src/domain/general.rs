@@ -6,6 +6,8 @@
 //! automatically chooses the most efficient implementation
 //! depending on the number of coefficients and the two-adicity of the prime.
 
+use core::alloc::Allocator;
+
 pub use crate::domain::utils::Elements;
 use crate::domain::{
     DomainCoeff, EvaluationDomain, MixedRadixEvaluationDomain, Radix2EvaluationDomain,
@@ -181,12 +183,12 @@ impl<F: FftField> EvaluationDomain<F> for GeneralEvaluationDomain<F> {
     }
 
     #[inline]
-    fn fft_in_place<T: DomainCoeff<F>>(&self, coeffs: &mut Vec<T>) {
+    fn fft_in_place<T: DomainCoeff<F>, A: Allocator>(&self, coeffs: &mut Vec<T, A>) {
         map!(self, fft_in_place, coeffs)
     }
 
     #[inline]
-    fn ifft_in_place<T: DomainCoeff<F>>(&self, evals: &mut Vec<T>) {
+    fn ifft_in_place<T: DomainCoeff<F>, A: Allocator>(&self, evals: &mut Vec<T, A>) {
         map!(self, ifft_in_place, evals)
     }
 

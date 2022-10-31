@@ -7,6 +7,8 @@
 //! These roots of unity comprise the domain over which
 //! polynomial arithmetic is performed.
 
+use core::alloc::Allocator;
+
 use ark_ff::FftField;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{fmt, hash, rand::Rng, vec::Vec};
@@ -97,7 +99,7 @@ pub trait EvaluationDomain<F: FftField>:
     }
 
     /// Compute a FFT, modifying the vector in place.
-    fn fft_in_place<T: DomainCoeff<F>>(&self, coeffs: &mut Vec<T>);
+    fn fft_in_place<T: DomainCoeff<F>, A: Allocator>(&self, coeffs: &mut Vec<T, A>);
 
     /// Compute a IFFT.
     #[inline]
@@ -108,7 +110,7 @@ pub trait EvaluationDomain<F: FftField>:
     }
 
     /// Compute a IFFT, modifying the vector in place.
-    fn ifft_in_place<T: DomainCoeff<F>>(&self, evals: &mut Vec<T>);
+    fn ifft_in_place<T: DomainCoeff<F>, A: Allocator>(&self, evals: &mut Vec<T, A>);
 
     /// Multiply the `i`-th element of `coeffs` with `g^i`.
     fn distribute_powers<T: DomainCoeff<F>>(coeffs: &mut [T], g: F) {

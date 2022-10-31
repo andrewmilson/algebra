@@ -14,6 +14,7 @@
     clippy::suspicious_op_assign_impl,
     clippy::suspicious_arithmetic_impl
 )]
+#![feature(allocator_api)]
 
 #[macro_use]
 extern crate derivative;
