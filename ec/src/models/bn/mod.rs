@@ -23,7 +23,7 @@ pub enum TwistType {
     D,
 }
 
-pub trait BnParameters: 'static {
+pub trait BnConfig: 'static {
     /// The absolute value of the BN curve parameter `X`
     /// (as in `q = 36 X^4 + 36 X^3 + 24 X^2 + 6 X + 1`).
     const X: &'static [u64];
@@ -41,10 +41,10 @@ pub trait BnParameters: 'static {
     type Fp2Config: Fp2Config<Fp = Self::Fp>;
     type Fp6Config: Fp6Config<Fp2Config = Self::Fp2Config>;
     type Fp12Config: Fp12Config<Fp6Config = Self::Fp6Config>;
-    type G1Parameters: SWCurveConfig<BaseField = Self::Fp>;
-    type G2Parameters: SWCurveConfig<
+    type G1Config: SWCurveConfig<BaseField = Self::Fp>;
+    type G2Config: SWCurveConfig<
         BaseField = Fp2<Self::Fp2Config>,
-        ScalarField = <Self::G1Parameters as CurveConfig>::ScalarField,
+        ScalarField = <Self::G1Config as CurveConfig>::ScalarField,
     >;
 }
 
@@ -58,9 +58,9 @@ pub use self::{
 
 #[derive(Derivative)]
 #[derivative(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-pub struct Bn<P: BnParameters>(PhantomData<fn() -> P>);
+pub struct Bn<P: BnConfig>(PhantomData<fn() -> P>);
 
-impl<P: BnParameters> Bn<P> {
+impl<P: BnConfig> Bn<P> {
     /// Evaluates the line function at point p.
     fn ell(f: &mut Fp12<P::Fp12Config>, coeffs: &g2::EllCoeff<P>, p: &G1Affine<P>) {
         let mut c0 = coeffs.0;
@@ -82,7 +82,7 @@ impl<P: BnParameters> Bn<P> {
     }
 
     fn exp_by_neg_x(mut f: Fp12<P::Fp12Config>) -> Fp12<P::Fp12Config> {
-        f = f.cyclotomic_exp(&P::X);
+        f = f.cyclotomic_exp(P::X);
         if !P::X_IS_NEGATIVE {
             f.cyclotomic_inverse_in_place();
         }
@@ -90,9 +90,9 @@ impl<P: BnParameters> Bn<P> {
     }
 }
 
-impl<P: BnParameters> Pairing for Bn<P> {
-    type BaseField = <P::G1Parameters as CurveConfig>::BaseField;
-    type ScalarField = <P::G1Parameters as CurveConfig>::ScalarField;
+impl<P: BnConfig> Pairing for Bn<P> {
+    type BaseField = <P::G1Config as CurveConfig>::BaseField;
+    type ScalarField = <P::G1Config as CurveConfig>::ScalarField;
     type G1 = G1Projective<P>;
     type G1Affine = G1Affine<P>;
     type G1Prepared = G1Prepared<P>;
@@ -174,7 +174,7 @@ impl<P: BnParameters> Pairing for Bn<P> {
             // f2 = f^(p^6 - 1)
             f2 = r;
             // r = f^((p^6 - 1)(p^2))
-            r.frobenius_map(2);
+            r.frobenius_map_in_place(2);
 
             // r = f^((p^6 - 1)(p^2) + (p^6 - 1))
             // r = f^((p^6 - 1)(p^2 + 1))
@@ -206,13 +206,13 @@ impl<P: BnParameters> Pairing for Bn<P> {
             let y10 = y8 * &y4;
             let y11 = y10 * &r;
             let mut y12 = y9;
-            y12.frobenius_map(1);
+            y12.frobenius_map_in_place(1);
             let y13 = y12 * &y11;
-            y8.frobenius_map(2);
+            y8.frobenius_map_in_place(2);
             let y14 = y8 * &y13;
             r.cyclotomic_inverse_in_place();
             let mut y15 = r * &y9;
-            y15.frobenius_map(3);
+            y15.frobenius_map_in_place(3);
             let y16 = y15 * &y14;
 
             PairingOutput(y16)

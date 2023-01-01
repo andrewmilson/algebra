@@ -26,7 +26,7 @@ pub use self::{
 
 pub type GT<P> = Fp4<P>;
 
-pub trait MNT4Parameters: 'static {
+pub trait MNT4Config: 'static {
     const TWIST: Fp2<Self::Fp2Config>;
     const TWIST_COEFF_A: Fp2<Self::Fp2Config>;
     const ATE_LOOP_COUNT: &'static [i8];
@@ -38,18 +38,18 @@ pub trait MNT4Parameters: 'static {
     type Fr: PrimeField + Into<<Self::Fr as PrimeField>::BigInt>;
     type Fp2Config: Fp2Config<Fp = Self::Fp>;
     type Fp4Config: Fp4Config<Fp2Config = Self::Fp2Config>;
-    type G1Parameters: SWCurveConfig<BaseField = Self::Fp, ScalarField = Self::Fr>;
-    type G2Parameters: SWCurveConfig<
+    type G1Config: SWCurveConfig<BaseField = Self::Fp, ScalarField = Self::Fr>;
+    type G2Config: SWCurveConfig<
         BaseField = Fp2<Self::Fp2Config>,
-        ScalarField = <Self::G1Parameters as CurveConfig>::ScalarField,
+        ScalarField = <Self::G1Config as CurveConfig>::ScalarField,
     >;
 }
 
 #[derive(Derivative)]
 #[derivative(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-pub struct MNT4<P: MNT4Parameters>(PhantomData<fn() -> P>);
+pub struct MNT4<P: MNT4Config>(PhantomData<fn() -> P>);
 
-impl<P: MNT4Parameters> MNT4<P> {
+impl<P: MNT4Config> MNT4<P> {
     fn doubling_for_flipped_miller_loop(
         r: &G2ProjectiveExtended<P>,
     ) -> (G2ProjectiveExtended<P>, AteDoubleCoefficients<P>) {
@@ -183,22 +183,22 @@ impl<P: MNT4Parameters> MNT4<P> {
         let elt_inv_clone = *elt_inv;
 
         let mut elt_q = *elt;
-        elt_q.frobenius_map(1);
+        elt_q.frobenius_map_in_place(1);
 
-        let w1_part = elt_q.cyclotomic_exp(&P::FINAL_EXPONENT_LAST_CHUNK_1);
+        let w1_part = elt_q.cyclotomic_exp(P::FINAL_EXPONENT_LAST_CHUNK_1);
         let w0_part = if P::FINAL_EXPONENT_LAST_CHUNK_W0_IS_NEG {
-            elt_inv_clone.cyclotomic_exp(&P::FINAL_EXPONENT_LAST_CHUNK_ABS_OF_W0)
+            elt_inv_clone.cyclotomic_exp(P::FINAL_EXPONENT_LAST_CHUNK_ABS_OF_W0)
         } else {
-            elt_clone.cyclotomic_exp(&P::FINAL_EXPONENT_LAST_CHUNK_ABS_OF_W0)
+            elt_clone.cyclotomic_exp(P::FINAL_EXPONENT_LAST_CHUNK_ABS_OF_W0)
         };
 
         w1_part * &w0_part
     }
 }
 
-impl<P: MNT4Parameters> Pairing for MNT4<P> {
-    type BaseField = <P::G1Parameters as CurveConfig>::BaseField;
-    type ScalarField = <P::G1Parameters as CurveConfig>::ScalarField;
+impl<P: MNT4Config> Pairing for MNT4<P> {
+    type BaseField = <P::G1Config as CurveConfig>::BaseField;
+    type ScalarField = <P::G1Config as CurveConfig>::ScalarField;
     type G1 = G1Projective<P>;
     type G1Affine = G1Affine<P>;
     type G1Prepared = G1Prepared<P>;
